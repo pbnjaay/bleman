@@ -1,7 +1,6 @@
-from django.db import models, transaction
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from rest_framework.exceptions import NotFound
 
 from mill.constants import STATE_CHOICES, STATE_UNPAID
 from mill.models import (Command, Customer, Item, ItemReturn, Product,

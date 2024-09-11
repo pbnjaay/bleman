@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Sum, Value
 from django.db.models.functions import Coalesce
-
+from django.core.validators import MinValueValidator
 from mill.constants import STATE_CHOICES, STATE_UNPAID
 
 
@@ -20,8 +20,10 @@ class ProductManager(models.Manager):
 class Product(models.Model):
     objects = ProductManager()
     name = models.CharField(max_length=255)
-    purchase_price = models.PositiveIntegerField()
-    customer_price = models.PositiveIntegerField()
+    purchase_price = models.PositiveIntegerField(
+        validators=[MinValueValidator(0)])
+    customer_price = models.PositiveIntegerField(
+        validators=[MinValueValidator(0)])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -42,7 +44,7 @@ class Production(models.Model):
         on_delete=models.PROTECT,
         related_name='productions'
     )
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
     production_date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -56,8 +58,9 @@ class Purchase(models.Model):
         Product, on_delete=models.PROTECT,
         related_name='purchases'
     )
-    purchase_unit_price = models.PositiveIntegerField()
-    quantity = models.PositiveIntegerField()
+    purchase_unit_price = models.PositiveIntegerField(
+        validators=[MinValueValidator(0)])
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
     purchase_date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -105,8 +108,8 @@ class Item(models.Model):
         on_delete=models.PROTECT,
         related_name='items'
     )
-    price = models.PositiveIntegerField()
-    quantity = models.PositiveIntegerField()
+    price = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
     command = models.ForeignKey(
         Command,
         on_delete=models.PROTECT,
@@ -126,7 +129,7 @@ class Item(models.Model):
 class ItemReturn(models.Model):
     item = models.ForeignKey(
         Item, on_delete=models.PROTECT, related_name='returns')
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
     return_date = models.DateTimeField(auto_now_add=True)
     reason = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
