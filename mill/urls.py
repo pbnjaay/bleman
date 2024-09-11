@@ -6,6 +6,7 @@ from . import views
 router = routers.DefaultRouter()
 router.register('products', views.ProductViewSet, basename='products')
 router.register('customers', views.CustomerViewSet, basename='customers')
+router.register('purchases', views.PurchaseViewSet, basename='purchases')
 router.register('commands', views.CommandViewSet, basename='commands')
 
 command_router = routers.NestedDefaultRouter(

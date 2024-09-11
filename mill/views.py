@@ -2,13 +2,13 @@ from django.shortcuts import get_object_or_404
 from rest_framework import permissions, viewsets
 
 from mill.models import (Command, Customer, Item, ItemReturn, Product,
-                         Production)
+                         Production, Purchase)
 from mill.pagination import PageNumberPagination
 from mill.serializers import (AddItemSerializer, CommandSerializer,
                               CustomerSerialzer, ItemReturnSerializer,
                               ItemSerializer, ProductionSerializer,
-                              ProductSerializer, UpdateCommandSerializer,
-                              UpdateItemSerializer)
+                              ProductSerializer, PurchaseSerializer,
+                              UpdateCommandSerializer, UpdateItemSerializer)
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -97,3 +97,10 @@ class ItemReturnViewSet(viewsets.ModelViewSet):
         return ItemReturn.objects\
             .order_by('-id')\
             .filter(item_id=item_id)
+
+
+class PurchaseViewSet(viewsets.ModelViewSet):
+    pagination_class = PageNumberPagination
+    serializer_class = PurchaseSerializer
+    queryset = Purchase.objects.all()
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]

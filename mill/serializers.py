@@ -3,14 +3,15 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from mill.constants import STATE_CHOICES, STATE_UNPAID
-from mill.models import (Command, Customer, Item, ItemReturn, Product,
+from mill.models import (Command, Customer, Item, ItemReturn, Product, Purchase,
                          Production)
 
 
-class SimpleProductSerialzer(serializers.ModelSerializer):
+class PurchaseSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Product
-        fields = ['id', 'name', 'customer_price', 'purchase_price']
+        model = Purchase
+        fields = ['id', 'product', 'purchase_unit_price',
+                  'quantity', 'purchase_date', 'created_at', 'updated_at']
 
 
 class CustomerSerialzer(serializers.ModelSerializer):
@@ -114,9 +115,6 @@ class AddItemSerializer(serializers.ModelSerializer):
     quantity = serializers.IntegerField(required=False)
 
     def validate_quantity(self, quantity):
-        if quantity <= 0:
-            raise serializers.ValidationError('must be greater than zero.')
-
         product_id = int(self.initial_data['product_id'])
         product = Product.objects.filter(pk=product_id).first()
         if product is None:
