@@ -18,14 +18,8 @@ class ProductViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
     queryset = Product.objects\
-        .annotate(
-            quantity_in_stock=(
-                Coalesce(Sum('purchases__quantity'), Value(0)) +
-                Coalesce(Sum('productions__quantity'), Value(0)) -
-                Coalesce(Sum('items__quantity'), Value(0)) +
-                Coalesce(Sum('items__returns__quantity'), Value(0))
-            )
-        ).order_by('name')\
+        .get_product_with_quantity_in_stock()\
+        .order_by('name')\
         .prefetch_related(
             'productions',
             'purchases',

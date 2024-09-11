@@ -5,7 +5,20 @@ from django.db.models.functions import Coalesce
 from mill.constants import STATE_CHOICES, STATE_UNPAID
 
 
+class ProductManager(models.Manager):
+    def get_product_with_quantity_in_stock(self):
+        return Product.objects.annotate(
+            quantity_in_stock=(
+                Coalesce(Sum('purchases__quantity'), Value(0)) +
+                Coalesce(Sum('productions__quantity'), Value(0)) -
+                Coalesce(Sum('items__quantity'), Value(0)) +
+                Coalesce(Sum('items__returns__quantity'), Value(0))
+            )
+        )
+
+
 class Product(models.Model):
+    objects = ProductManager()
     name = models.CharField(max_length=255)
     purchase_price = models.PositiveIntegerField()
     customer_price = models.PositiveIntegerField()
@@ -13,14 +26,9 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def get_quantity_in_stock(self):
-        return Product.objects.filter(id=self.id).annotate(
-            quantity_in_stock=(
-                Coalesce(Sum('purchases__quantity'), Value(0)) +
-                Coalesce(Sum('productions__quantity'), Value(0)) -
-                Coalesce(Sum('items__quantity'), Value(0)) +
-                Coalesce(Sum('items__returns__quantity'), Value(0))
-            )
-        )\
+        return Product.objects\
+            .get_product_with_quantity_in_stock()\
+            .filter(id=self.id)\
             .values('quantity_in_stock')\
             .first()['quantity_in_stock']
 
