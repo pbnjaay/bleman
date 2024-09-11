@@ -104,3 +104,10 @@ class PurchaseViewSet(viewsets.ModelViewSet):
     serializer_class = PurchaseSerializer
     queryset = Purchase.objects.all()
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
+
+class ProductionViewSet(viewsets.ModelViewSet):
+    pagination_class = PageNumberPagination
+    serializer_class = ProductionSerializer
+    queryset = Production.objects.all()
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]

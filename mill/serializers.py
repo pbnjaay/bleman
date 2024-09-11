@@ -7,6 +7,13 @@ from mill.models import (Command, Customer, Item, ItemReturn, Product, Purchase,
                          Production)
 
 
+class ProductionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Production
+        fields = ['id', 'product', 'quantity',
+                  'production_date', 'created_at', 'updated_at']
+
+
 class PurchaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Purchase
