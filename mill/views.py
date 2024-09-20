@@ -16,12 +16,8 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
     queryset = Product.objects\
         .get_product_with_quantity_in_stock()\
-        .order_by('name')\
-        .prefetch_related(
-            'productions',
-            'purchases',
-            'items__returns'
-        )
+        .prefetch_related('productions', 'purchases', 'items__returns')\
+        .all()
 
     serializer_class = ProductSerializer
 
@@ -29,14 +25,14 @@ class ProductViewSet(viewsets.ModelViewSet):
 class CustomerViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
-    queryset = Customer.objects.order_by('surname').all()
+    queryset = Customer.objects.all()
     serializer_class = CustomerSerialzer
 
 
 class ProductionViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
     permission_classes = [permissions.IsAuthenticated]
-    queryset = Production.objects.order_by('production_date').all()
+    queryset = Production.objects.all()
     serializer_class = ProductionSerializer
 
 
@@ -45,7 +41,7 @@ class CommandViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Command.objects.prefetch_related('items__returns').order_by('-id')
+        return Command.objects.prefetch_related('items__returns').all()
 
     def get_serializer_class(self):
         if self.action == 'update':
@@ -68,7 +64,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             .filter(command_id=command_id)\
             .select_related('product')\
             .prefetch_related('returns')\
-            .order_by('-id')
+            .all()
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -88,15 +84,17 @@ class ItemReturnViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer_context(self):
-        return {'item_id': self.kwargs['item_pk']}
+        context = super().get_serializer_context()
+        context['item_id'] = self.kwargs['item_pk']
+        return context
 
     def get_queryset(self):
         item_id = self.kwargs['item_pk']
         get_object_or_404(Item, pk=item_id)
 
         return ItemReturn.objects\
-            .order_by('-id')\
-            .filter(item_id=item_id)
+            .filter(item_id=item_id)\
+            .all()
 
 
 class PurchaseViewSet(viewsets.ModelViewSet):

@@ -18,6 +18,9 @@ class ProductManager(models.Manager):
 
 
 class Product(models.Model):
+    class Meta:
+        ordering = ['name']
+
     objects = ProductManager()
     name = models.CharField(max_length=255)
     purchase_price = models.PositiveIntegerField(
@@ -39,6 +42,9 @@ class Product(models.Model):
 
 
 class Production(models.Model):
+    class Meta:
+        ordering = ['-production_date']
+
     product = models.ForeignKey(
         Product,
         on_delete=models.PROTECT,
@@ -54,6 +60,9 @@ class Production(models.Model):
 
 
 class Purchase(models.Model):
+    class Meta:
+        ordering = ['-purchase_date']
+
     product = models.ForeignKey(
         Product, on_delete=models.PROTECT,
         related_name='purchases'
@@ -70,6 +79,9 @@ class Purchase(models.Model):
 
 
 class Customer(models.Model):
+    class Meta:
+        ordering = ['surname']
+
     given_name = models.CharField(max_length=255)
     surname = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=12)
@@ -82,6 +94,9 @@ class Customer(models.Model):
 
 
 class Command(models.Model):
+    class Meta:
+        ordering = ['-id']
+
     customer = models.ForeignKey(
         Customer,
         on_delete=models.PROTECT,
@@ -103,6 +118,9 @@ class Command(models.Model):
 
 
 class Item(models.Model):
+    class Meta:
+        ordering = ['-id']
+
     product = models.ForeignKey(
         Product,
         on_delete=models.PROTECT,
@@ -127,6 +145,9 @@ class Item(models.Model):
 
 
 class ItemReturn(models.Model):
+    class Meta:
+        ordering = ['-id']
+
     item = models.ForeignKey(
         Item, on_delete=models.PROTECT, related_name='returns')
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
