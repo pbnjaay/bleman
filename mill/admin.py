@@ -8,19 +8,21 @@ from .models import Product, Customer, Production, Purchase, Command, Item
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'purchase_price',
                     'customer_price']
+    list_filter = ['created_at']
     search_fields = ['name']
 
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ['given_name', 'surname', 'is_supplier']
-    list_filter = ['is_supplier']
+    list_filter = ['is_supplier', 'created_at']
     search_fields = ['given_name__istartswith']
 
 
 @admin.register(Production)
 class ProductionAdmin(admin.ModelAdmin):
     list_display = ['product', 'quantity', 'production_date']
+    list_filter = ['created_at']
     autocomplete_fields = ['product']
 
 
@@ -30,6 +32,7 @@ class PurchaseAdmin(admin.ModelAdmin):
                     'quantity', 'purchase_date']
     search_fields = ['product']
     autocomplete_fields = ['product']
+    list_filter = ['created_at']
 
 
 class ItemInline(admin.TabularInline):
@@ -40,8 +43,8 @@ class ItemInline(admin.TabularInline):
 
 @admin.register(Command)
 class CommandAdmin(admin.ModelAdmin):
-    list_display = ['id', 'customer', 'state']
-    list_filter = ['state']
+    list_display = ['id', 'customer', 'state', 'created_at']
+    list_filter = ['state', 'created_at']
     inlines = [ItemInline]
     autocomplete_fields = ['customer']
 

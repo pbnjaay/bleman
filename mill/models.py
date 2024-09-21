@@ -2,7 +2,9 @@ from django.db import models
 from django.db.models import Sum, Value
 from django.db.models.functions import Coalesce
 from django.core.validators import MinValueValidator
+from django.forms import ValidationError
 from mill.constants import STATE_CHOICES, STATE_UNPAID
+from django.db import transaction
 
 
 class ProductManager(models.Manager):
@@ -117,6 +119,21 @@ class Command(models.Model):
         return f'{self.pk}'
 
 
+class ItemManager(models.Manager):
+    def add_item(self, command, product, quantity, price):
+        with transaction.atomic():
+            item, created = Item.objects.get_or_create(
+                command=command,
+                product=product,
+                defaults={'quantity': quantity, 'price': price}
+            )
+
+            if not created:
+                item.update_quantity(item.quantity + quantity)
+
+            return item
+
+
 class Item(models.Model):
     class Meta:
         ordering = ['-id']
@@ -128,6 +145,7 @@ class Item(models.Model):
     )
     price = models.PositiveIntegerField(validators=[MinValueValidator(0)])
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+    objects = ItemManager()
     command = models.ForeignKey(
         Command,
         on_delete=models.PROTECT,
@@ -139,6 +157,19 @@ class Item(models.Model):
 
     def get_net_quantity(self):
         return self.quantity - self.__get_total_returns()
+
+    def update_quantity(self, new_quantity):
+        with transaction.atomic():
+            product_stock = self.product.get_quantity_in_stock()
+            if new_quantity > product_stock:
+                raise ValidationError(
+                    ("Invalid value: %(value)s"),
+                    code="invalid",
+                    params={"value": f'{new_quantity}'}
+                )
+
+            self.quantity = new_quantity
+            self.save()
 
     def __str__(self) -> str:
         return self.product.name

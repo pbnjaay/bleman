@@ -1,6 +1,8 @@
 from django.db import transaction
+from django.forms import ValidationError
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 
 from mill.constants import STATE_CHOICES, STATE_UNPAID
 from mill.models import (Command, Customer, Item, ItemReturn, Product, Purchase,
@@ -76,7 +78,8 @@ class CommandSerializer(serializers.ModelSerializer):
     total_amount = serializers.SerializerMethodField()
     state = serializers.ChoiceField(
         choices=STATE_CHOICES,
-        default=STATE_UNPAID
+        default=STATE_UNPAID,
+        source='get_state_display'
     )
 
     def get_total_amount(self, command: Command):
@@ -122,43 +125,23 @@ class AddItemSerializer(serializers.ModelSerializer):
     quantity = serializers.IntegerField(required=False)
 
     def validate_quantity(self, quantity):
-        product_id = int(self.initial_data['product_id'])
-        product = Product.objects.filter(pk=product_id).first()
-        if product is None:
-            raise serializers.ValidationError('not found.')
-
-        quantity_in_stock = product.get_quantity_in_stock()
-
-        if quantity_in_stock < quantity:
+        if quantity <= 0:
             raise serializers.ValidationError(
-                f'{quantity_in_stock} {product.name} left in stock.')
-
+                _(f"Ensure this value is greater than or equal to 0."))
         return quantity
 
     def save(self, **kwargs):
-        with transaction.atomic():
-            product_id = self.validated_data['product_id']
-            command_id = self.context['command_id']
-            quantity = self.validated_data['quantity']
+        command_id = self.context['command_id']
+        product_id = self.validated_data['product_id']
+        command = get_object_or_404(Command, pk=command_id)
+        product = get_object_or_404(Product, pk=product_id)
+        quantity = self.validated_data['quantity']
 
-            try:
-                item = Item.objects.get(
-                    command_id=command_id,
-                    product=product_id
-                )
-                item.quantity += quantity
-                item.save(update_fields=['quantity'])
-                self.instance = item
-            except Item.DoesNotExist:
-                product = Product.objects.get(pk=product_id)
-                command = get_object_or_404(Command, pk=command_id)
-                price = product.purchase_price \
-                    if command.customer.is_supplier \
-                    else product.customer_price
-                self.instance = Item.objects.create(
-                    command_id=command_id,
-                    price=price,
-                    **self.validated_data
-                )
-
-            return self.instance
+        price = product.purchase_price if command.customer.is_supplier else product.customer_price
+        try:
+            item = Item.objects.add_item(
+                command=command, product=product, quantity=quantity, price=price)
+        except ValidationError as e:
+            raise serializers.ValidationError(
+                {"quantity": e.message}, code='invalid')
+        return item
