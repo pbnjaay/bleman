@@ -128,20 +128,26 @@ class AddItemSerializer(serializers.ModelSerializer):
         if quantity <= 0:
             raise serializers.ValidationError(
                 _(f"Ensure this value is greater than or equal to 0."))
-        return quantity
+        return
 
-    def save(self, **kwargs):
+    def create(self, validated_data):
         command_id = self.context['command_id']
-        product_id = self.validated_data['product_id']
+        product_id = validated_data['product_id']
         command = get_object_or_404(Command, pk=command_id)
         product = get_object_or_404(Product, pk=product_id)
         quantity = self.validated_data['quantity']
-
-        price = product.purchase_price if command.customer.is_supplier else product.customer_price
+        price = product.purchase_price \
+            if command.customer.is_supplier\
+            else product.customer_price
         try:
             item = Item.objects.add_item(
-                command=command, product=product, quantity=quantity, price=price)
+                command=command,
+                product=product,
+                quantity=quantity,
+                price=price
+            )
         except ValidationError as e:
             raise serializers.ValidationError(
-                {"quantity": e.message}, code='invalid')
+                {"quantity": e.message}, code='invalid'
+            )
         return item

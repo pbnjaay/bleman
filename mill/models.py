@@ -163,7 +163,7 @@ class Item(models.Model):
             product_stock = self.product.get_quantity_in_stock()
             if new_quantity > product_stock:
                 raise ValidationError(
-                    ("Invalid value: %(value)s"),
+                    (f"Invalid value: {new_quantity}"),
                     code="invalid",
                     params={"value": f'{new_quantity}'}
                 )
