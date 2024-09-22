@@ -12,6 +12,7 @@ django-debug-toolbar = "*"
 drf-nested-routers = "*"
 gunicorn = "*"
 whitenoise = "*"
+dj-database-url = "*"
 
 [dev-packages]
 
