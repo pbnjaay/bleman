@@ -1,27 +1,19 @@
-# Utiliser une image Python comme base
-FROM python:3.10
+ARG PYTHON_VERSION=3.10-slim
 
+FROM python:${PYTHON_VERSION}
+
+ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# Définir le répertoire de travail dans le conteneur
-WORKDIR /app
+RUN mkdir -p /code
 
-# Install pipenv
-RUN pip install --upgrade pip 
+WORKDIR /code
+
 RUN pip install pipenv
+COPY Pipfile Pipfile.lock /code/
+RUN pipenv install --deploy --system
+COPY . /code
 
-# Copier uniquement Pipfile et Pipfile.lock dans le conteneur
-COPY Pipfile Pipfile.lock /app/
-
-
-RUN pipenv install --system --dev
-
-# Copy the application files into the image
-COPY . /app/
-
-
-# Exposer le port sur lequel l'application sera disponible
 EXPOSE 8000
 
-# Commande pour démarrer l'application
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["gunicorn","--bind",":8000","--workers","2","bleman.wsgi"]
