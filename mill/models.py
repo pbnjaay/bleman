@@ -6,24 +6,14 @@ from django.forms import ValidationError
 from mill.constants import STATE_CHOICES, STATE_UNPAID
 from django.db import transaction
 
-
-class ProductManager(models.Manager):
-    def get_product_with_quantity_in_stock(self):
-        return Product.objects.annotate(
-            quantity_in_stock=(
-                Coalesce(Sum('purchases__quantity'), Value(0)) +
-                Coalesce(Sum('productions__quantity'), Value(0)) -
-                Coalesce(Sum('items__quantity'), Value(0)) +
-                Coalesce(Sum('items__returns__quantity'), Value(0))
-            )
-        )
+from . import managers
 
 
 class Product(models.Model):
     class Meta:
         ordering = ['name']
 
-    objects = ProductManager()
+    objects = managers.ProductManager()
     name = models.CharField(max_length=255)
     purchase_price = models.PositiveIntegerField(
         validators=[MinValueValidator(0)])
@@ -119,21 +109,6 @@ class Command(models.Model):
         return f'{self.pk}'
 
 
-class ItemManager(models.Manager):
-    def add_item(self, command, product, quantity, price):
-        with transaction.atomic():
-            item, created = Item.objects.get_or_create(
-                command=command,
-                product=product,
-                defaults={'quantity': quantity, 'price': price}
-            )
-
-            if not created:
-                item.update_quantity(item.quantity + quantity)
-
-            return item
-
-
 class Item(models.Model):
     class Meta:
         ordering = ['-id']
@@ -145,7 +120,7 @@ class Item(models.Model):
     )
     price = models.PositiveIntegerField(validators=[MinValueValidator(0)])
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
-    objects = ItemManager()
+    objects = managers.ItemManager()
     command = models.ForeignKey(
         Command,
         on_delete=models.PROTECT,

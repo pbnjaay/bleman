@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.forms import ModelForm
+from django.http import HttpRequest
 from .models import Product, Customer, Production, Purchase, Command, Item
 
 # Register your models here.
@@ -52,3 +54,7 @@ class CommandAdmin(admin.ModelAdmin):
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
     list_display = ['product', 'price', 'quantity', 'command']
+
+    def save_model(self, request, obj, form, change):
+        obj.update_quantity(form.cleaned_data['quantity'])
+        return super().save_model(request, obj, form, change)
