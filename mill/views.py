@@ -1,5 +1,8 @@
 from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
 from rest_framework import permissions, viewsets
+
+from rest_framework import mixins
 
 from mill.models import (Command, Customer, Item, ItemReturn, Product,
                          Production, Purchase)
@@ -21,12 +24,30 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     serializer_class = ProductSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        production_queryset = Production.objects.filter(
+            product_id=self.kwargs['pk'])
+
+        purchase_queryset = Purchase.objects.filter(
+            product_id=self.kwargs['pk'])
+
+        if production_queryset.count() > 0 or purchase_queryset.count() > 0:
+            return Response({'product': 'Product cannot be deleted.'}, status=400)
+
+        return super().destroy(request, *args, **kwargs)
+
 
 class CustomerViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
     queryset = Customer.objects.all()
     serializer_class = CustomerSerialzer
+
+    def destroy(self, request, *args, **kwargs):
+        if Command.objects.filter(customer_id=self.kwargs['pk']).count() > 0:
+            return Response({'product': 'Customer cannot be deleted.'}, status=400)
+
+        return super().destroy(request, *args, **kwargs)
 
 
 class ProductionViewSet(viewsets.ModelViewSet):
@@ -47,6 +68,11 @@ class CommandViewSet(viewsets.ModelViewSet):
         if self.action == 'update':
             return UpdateCommandSerializer
         return CommandSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        if Item.objects.filter(command_id=self.kwargs['pk']).count() > 0:
+            return Response({'error': 'Command cannot be deleted.'}, status=400)
+        return super().destroy(request, *args, **kwargs)
 
 
 class ItemViewSet(viewsets.ModelViewSet):

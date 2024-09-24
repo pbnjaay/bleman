@@ -33,7 +33,7 @@ class CustomerSerialzer(serializers.ModelSerializer):
 class ProductionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Production
-        fields = ['id', 'quantity', 'production_date',
+        fields = ['id', 'product', 'quantity', 'production_date',
                   'created_at', 'updated_at']
 
 
@@ -79,7 +79,6 @@ class CommandSerializer(serializers.ModelSerializer):
     state = serializers.ChoiceField(
         choices=STATE_CHOICES,
         default=STATE_UNPAID,
-        source='get_state_display'
     )
 
     def get_total_amount(self, command: Command):
@@ -107,34 +106,21 @@ class UpdateItemSerializer(serializers.ModelSerializer):
     def validate_quantity(self, value):
         item = self.instance
         product = item.product
-        quantity_in_stock = product.get_quantity_in_stock()
-
-        if quantity_in_stock < value:
-            raise serializers.ValidationError(
-                f'{quantity_in_stock} {product.name} left in stock.')
-
+        product.validate_stock_availability(value)
         return value
 
 
 class AddItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
-        fields = ['id', 'product_id', 'quantity']
+        fields = ['id', 'product', 'quantity']
 
-    product_id = serializers.IntegerField()
     quantity = serializers.IntegerField(required=False)
 
-    def validate_quantity(self, quantity):
-        if quantity <= 0:
-            raise serializers.ValidationError(
-                _(f"Ensure this value is greater than or equal to 0."))
-        return
-
-    def create(self, validated_data):
+    def save(self, **kwargs):
         command_id = self.context['command_id']
-        product_id = validated_data['product_id']
+        product = self.validated_data['product']
         command = get_object_or_404(Command, pk=command_id)
-        product = get_object_or_404(Product, pk=product_id)
         quantity = self.validated_data['quantity']
         price = product.purchase_price \
             if command.customer.is_supplier\
@@ -148,6 +134,6 @@ class AddItemSerializer(serializers.ModelSerializer):
             )
         except ValidationError as e:
             raise serializers.ValidationError(
-                {"quantity": e.message}, code='invalid'
+                {"quantity": list(e)}, code='invalid'
             )
         return item

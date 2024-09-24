@@ -1,10 +1,11 @@
-from django.db import models
+from django.core.validators import MinValueValidator
+from django.db import models, transaction
 from django.db.models import Sum, Value
 from django.db.models.functions import Coalesce
-from django.core.validators import MinValueValidator
 from django.forms import ValidationError
+from django.utils.translation import gettext_lazy as _
+
 from mill.constants import STATE_CHOICES, STATE_UNPAID
-from django.db import transaction
 
 from . import managers
 
@@ -22,12 +23,34 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def get_quantity_in_stock(self):
+    def _get_quantity_in_stock(self):
         return Product.objects\
             .get_product_with_quantity_in_stock()\
             .filter(id=self.id)\
             .values('quantity_in_stock')\
             .first()['quantity_in_stock']
+
+    def validate_stock_availability(self, order_quantity):
+        if order_quantity <= 0:
+            raise ValidationError(
+                [
+                    ValidationError(
+                        _(f"Ensure this value is greater than or equal to 0."),
+                        code='min_value'
+                    )
+                ])
+
+        product_stock = self._get_quantity_in_stock()
+        if order_quantity > product_stock:
+            raise ValidationError(
+                [
+                    ValidationError(
+                        _(f"{product_stock} {self.name} left in stock"),
+                        code="out_of_stock",
+                    )
+                ]
+            )
+        return True
 
     def __str__(self) -> str:
         return self.name
@@ -135,14 +158,7 @@ class Item(models.Model):
 
     def update_quantity(self, new_quantity):
         with transaction.atomic():
-            product_stock = self.product.get_quantity_in_stock()
-            if new_quantity > product_stock:
-                raise ValidationError(
-                    (f"Invalid value: {new_quantity}"),
-                    code="invalid",
-                    params={"value": f'{new_quantity}'}
-                )
-
+            self.product.validate_stock_availability(new_quantity)
             self.quantity = new_quantity
             self.save()
 
