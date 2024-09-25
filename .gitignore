@@ -2,3 +2,4 @@
 /static/
 general.log
 .env
+db.sqlite3
