@@ -1,5 +1,4 @@
 from django.db.models import Manager
-from django.db import transaction
 from django.db.models import Sum, Value
 from django.db.models.functions import Coalesce
 
@@ -20,14 +19,13 @@ class ProductManager(Manager):
 
 class ItemManager(Manager):
     def add_item(self, command, product, quantity, price):
-        with transaction.atomic():
-            item, created = models.Item.objects.get_or_create(
-                command=command,
-                product=product,
-                defaults={'quantity': quantity, 'price': price}
-            )
+        item, created = models.Item.objects.get_or_create(
+            command=command,
+            product=product,
+            defaults={'quantity': quantity, 'price': price}
+        )
 
-            if not created:
-                item.update_quantity(item.quantity + quantity)
+        if not created:
+            item.update_quantity(item.quantity + quantity)
 
-            return item
+        return item
