@@ -67,14 +67,19 @@ class ItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ['id', 'customer', 'status', 'items', 'total_amount']
+        fields = ['id', 'customer', 'status',
+                  'items', 'remain_amount', 'total_amount']
 
     items = ItemSerializer(many=True, read_only=True)
     total_amount = serializers.SerializerMethodField()
+    remain = serializers.SerializerMethodField()
     status = serializers.ChoiceField(
         choices=ORDER_STATUS_CHOICES,
         default=ORDER_STATUS_UNPAID,
     )
+
+    def get_remain_amount(self, order: Order):
+        return self.get_total_amount(order) - order.get_total_amount_payment()
 
     def get_total_amount(self, order: Order):
         return order.get_total_amount()
