@@ -1,7 +1,5 @@
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
-from django.db.models import Sum, Value
-from django.db.models.functions import Coalesce
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 
@@ -117,13 +115,13 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def get_total_amount(self):
-        return sum([item.get_net_quantity() * item.price for item in self.items.all()])
+        return sum(item.get_net_quantity() * item.price for item in self.items.all())
 
     def get_total_amount_payment(self):
-        return sum([payment.amount for payment in self.payments.all()])
+        return sum(payment.amount for payment in self.payments.all())
 
     def __str__(self) -> str:
-        return f'{self.pk}'
+        return f"Order {self.pk} - {self.customer.surname} ({self.status})"
 
 
 class Item(models.Model):
@@ -145,7 +143,7 @@ class Item(models.Model):
     )
 
     def __get_total_returns(self):
-        return sum([returned.quantity for returned in self.returns.all()])
+        return sum(returned.quantity for returned in self.returns.all())
 
     def get_net_quantity(self):
         return self.quantity - self.__get_total_returns()
@@ -179,15 +177,25 @@ class ItemReturn(models.Model):
 class Payment(models.Model):
     amount = models.PositiveBigIntegerField(validators=[MinValueValidator(1)])
     order = models.ForeignKey(
-        Order, on_delete=models.PROTECT, related_name='payments')
+        Order,
+        on_delete=models.PROTECT,
+        related_name='payments'
+    )
 
     status = models.CharField(
-        max_length=10, choices=constants.PAYMENT_STATUS_CHOICES, default=constants.PAYMENT_STATUS_PENDING)
+        max_length=10,
+        choices=constants.PAYMENT_STATUS_CHOICES,
+        default=constants.PAYMENT_STATUS_PENDING
+    )
     method = models.CharField(
-        max_length=15, choices=constants.PAYMENT_METHOD_CHOICES, default=constants.PAYMENT_METHOD_CASH)
+        max_length=15,
+        choices=constants.PAYMENT_METHOD_CHOICES,
+        default=constants.PAYMENT_METHOD_CASH
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod
     def get_total_payments(cls, order):
-        return cls.objects.filter(order=order).aggregate(total=models.Sum('amount'))['total'] or 0
+        return cls.objects.filter(order=order)\
+            .aggregate(total=models.Sum('amount'))['total'] or 0
