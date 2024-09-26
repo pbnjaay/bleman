@@ -104,9 +104,9 @@ class PaymentSerializer(serializers.ModelSerializer):
 class UpdateOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ['state']
+        fields = ['status']
 
-    state = serializers.ChoiceField(
+    status = serializers.ChoiceField(
         choices=ORDER_STATUS_CHOICES,
         default=ORDER_STATUS_UNPAID
     )
@@ -134,9 +134,8 @@ class AddItemSerializer(serializers.ModelSerializer):
     quantity = serializers.IntegerField(required=False)
 
     def save(self, **kwargs):
-        order_id = self.context['order_id']
         product = self.validated_data['product']
-        order = get_object_or_404(Order, pk=order_id)
+        order = get_object_or_404(Order, pk=self.context['order_id'])
         quantity = self.validated_data['quantity']
         price = product.purchase_price \
             if order.customer.is_supplier\
