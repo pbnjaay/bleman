@@ -141,3 +141,10 @@ class PaymentViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
     serializer_class = PaymentSerializer
     queryset = Payment.objects.all()
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['order_id'] = self.kwargs.get('order_pk')
+        return context

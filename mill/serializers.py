@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
-from mill.constants import ORDER_STATUS_CHOICES, ORDER_STATUS_UNPAID
+from mill.constants import ORDER_STATUS_CHOICES, ORDER_STATUS_PAID, ORDER_STATUS_REMAIN, ORDER_STATUS_UNPAID
 from mill.models import (Order, Customer, Item, ItemReturn, Payment, Product, Purchase,
                          Production)
 
@@ -82,6 +82,18 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = ['id', 'amount', 'order', 'status', 'method']
+
+    def save(self, **kwargs):
+        order_id = self.context['order_id']
+        order = self.validated_data['order']
+
+        order.status = ORDER_STATUS_PAID \
+            if order.get_total_amount() == self.validated_data['amount'] \
+            else ORDER_STATUS_REMAIN
+
+        order.save()
+
+        return super().save(**kwargs)
 
 
 class UpdateOrderSerializer(serializers.ModelSerializer):
