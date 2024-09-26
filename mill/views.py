@@ -4,12 +4,12 @@ from rest_framework import permissions, viewsets
 
 from rest_framework import mixins
 
-from mill.models import (Command, Customer, Item, ItemReturn, Product,
+from mill.models import (Command, Customer, Item, ItemReturn, Payment, Product,
                          Production, Purchase)
 from mill.pagination import PageNumberPagination
 from mill.serializers import (AddItemSerializer, CommandSerializer,
                               CustomerSerialzer, ItemReturnSerializer,
-                              ItemSerializer, ProductionSerializer,
+                              ItemSerializer, PaymentSerializer, ProductionSerializer,
                               ProductSerializer, PurchaseSerializer,
                               UpdateCommandSerializer, UpdateItemSerializer)
 
@@ -135,3 +135,9 @@ class ProductionViewSet(viewsets.ModelViewSet):
     serializer_class = ProductionSerializer
     queryset = Production.objects.all()
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
+
+class PaymentViewSet(viewsets.ModelViewSet):
+    pagination_class = PageNumberPagination
+    serializer_class = PaymentSerializer
+    queryset = Payment.objects.all()

@@ -5,7 +5,7 @@ from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
 from mill.constants import STATE_CHOICES, STATE_UNPAID
-from mill.models import (Command, Customer, Item, ItemReturn, Product, Purchase,
+from mill.models import (Command, Customer, Item, ItemReturn, Payment, Product, Purchase,
                          Production)
 
 
@@ -137,3 +137,9 @@ class AddItemSerializer(serializers.ModelSerializer):
                 {"quantity": list(e)}, code='invalid'
             )
         return item
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ['id', 'amount', 'command']

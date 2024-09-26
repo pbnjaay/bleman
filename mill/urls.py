@@ -9,6 +9,7 @@ router.register('customers', views.CustomerViewSet, basename='customers')
 router.register('purchases', views.PurchaseViewSet, basename='purchases')
 router.register('productions', views.ProductionViewSet, basename='productions')
 router.register('commands', views.CommandViewSet, basename='commands')
+router.register('payments', views.PaymentViewSet, basename='payments')
 
 command_router = routers.NestedDefaultRouter(
     router, 'commands', lookup='command')

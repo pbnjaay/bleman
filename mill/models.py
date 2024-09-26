@@ -180,3 +180,11 @@ class ItemReturn(models.Model):
 
     def __str__(self):
         return f'Return of {self.quantity} for {self.item}'
+
+
+class Payment(models.Model):
+    amount = models.PositiveBigIntegerField()
+    command = models.ForeignKey(
+        Command, on_delete=models.CASCADE, related_name='payments')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
