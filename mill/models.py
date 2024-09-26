@@ -188,7 +188,7 @@ class Payment(models.Model):
         Order, on_delete=models.PROTECT, related_name='payments')
 
     status = models.CharField(
-        max_length=10, choices=constants.PAYMENT_STATUS_CHOICES, default=constants.PAYMENT_STATUS_PENDIND)
+        max_length=10, choices=constants.PAYMENT_STATUS_CHOICES, default=constants.PAYMENT_STATUS_PENDING)
     method = models.CharField(
         max_length=15, choices=constants.PAYMENT_METHOD_CHOICES, default=constants.PAYMENT_METHOD_CASH)
     created_at = models.DateTimeField(auto_now_add=True)
