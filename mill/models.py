@@ -5,7 +5,7 @@ from django.db.models.functions import Coalesce
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-from mill.constants import STATE_CHOICES, STATE_UNPAID
+from mill import constants
 
 from . import managers
 
@@ -108,19 +108,19 @@ class Customer(models.Model):
         return f'{self.given_name} {self.surname}'
 
 
-class Command(models.Model):
+class Order(models.Model):
     class Meta:
         ordering = ['-id']
 
     customer = models.ForeignKey(
         Customer,
         on_delete=models.PROTECT,
-        related_name='commands'
+        related_name='orders'
     )
-    state = models.CharField(
-        max_length=1,
-        choices=STATE_CHOICES,
-        default=STATE_UNPAID
+    status = models.CharField(
+        max_length=6,
+        choices=constants.ORDER_STATUS_CHOICES,
+        default=constants.ORDER_STATUS_UNPAID
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -144,8 +144,8 @@ class Item(models.Model):
     price = models.PositiveIntegerField(validators=[MinValueValidator(0)])
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
     objects = managers.ItemManager()
-    command = models.ForeignKey(
-        Command,
+    order = models.ForeignKey(
+        Order,
         on_delete=models.PROTECT,
         related_name='items'
     )
@@ -183,26 +183,17 @@ class ItemReturn(models.Model):
 
 
 class Payment(models.Model):
-    PAYMENT_STATUS_CHOICES = [
-        ('PENDING', 'Pending'),
-        ('COMPLETED', 'Completed'),
-        ('FAILED', 'Failed'),
-    ]
-    PAYMENT_METHOD_CHOICES = [
-        ('CASH', 'Cash'),
-        ('CREDIT_CARD', 'Credit Card'),
-        ('BANK_TRANSFER', 'Bank Transfer'),
-    ]
     amount = models.PositiveBigIntegerField(validators=[MinValueValidator(1)])
-    command = models.ForeignKey(
-        Command, on_delete=models.PROTECT, related_name='payments')
+    order = models.ForeignKey(
+        Order, on_delete=models.PROTECT, related_name='payments')
 
     status = models.CharField(
-        max_length=10, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
-    method = models.CharField(max_length=15, choices=PAYMENT_METHOD_CHOICES)
+        max_length=10, choices=constants.PAYMENT_STATUS_CHOICES, default=constants.PAYMENT_STATUS_PENDIND)
+    method = models.CharField(
+        max_length=15, choices=constants.PAYMENT_METHOD_CHOICES, default=constants.PAYMENT_METHOD_CASH)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod
-    def get_total_payments(cls, command):
-        return cls.objects.filter(command=command).aggregate(total=models.Sum('amount'))['total'] or 0
+    def get_total_payments(cls, order):
+        return cls.objects.filter(order=order).aggregate(total=models.Sum('amount'))['total'] or 0

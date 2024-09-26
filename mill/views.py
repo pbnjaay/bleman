@@ -4,14 +4,14 @@ from rest_framework import permissions, viewsets
 
 from rest_framework import mixins
 
-from mill.models import (Command, Customer, Item, ItemReturn, Payment, Product,
+from mill.models import (Order, Customer, Item, ItemReturn, Payment, Product,
                          Production, Purchase)
 from mill.pagination import PageNumberPagination
-from mill.serializers import (AddItemSerializer, CommandSerializer,
+from mill.serializers import (AddItemSerializer, OrderSerializer,
                               CustomerSerialzer, ItemReturnSerializer,
                               ItemSerializer, PaymentSerializer, ProductionSerializer,
                               ProductSerializer, PurchaseSerializer,
-                              UpdateCommandSerializer, UpdateItemSerializer)
+                              UpdateOrderSerializer, UpdateItemSerializer)
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -44,7 +44,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerialzer
 
     def destroy(self, request, *args, **kwargs):
-        if Command.objects.filter(customer_id=self.kwargs['pk']).count() > 0:
+        if Order.objects.filter(customer_id=self.kwargs['pk']).count() > 0:
             return Response({'product': 'Customer cannot be deleted.'}, status=400)
 
         return super().destroy(request, *args, **kwargs)
@@ -57,21 +57,21 @@ class ProductionViewSet(viewsets.ModelViewSet):
     serializer_class = ProductionSerializer
 
 
-class CommandViewSet(viewsets.ModelViewSet):
+class OrderViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Command.objects.prefetch_related('items__returns').all()
+        return Order.objects.prefetch_related('items__returns').all()
 
     def get_serializer_class(self):
         if self.action == 'update':
-            return UpdateCommandSerializer
-        return CommandSerializer
+            return UpdateOrderSerializer
+        return OrderSerializer
 
     def destroy(self, request, *args, **kwargs):
-        if Item.objects.filter(command_id=self.kwargs['pk']).count() > 0:
-            return Response({'error': 'Command cannot be deleted.'}, status=400)
+        if Item.objects.filter(order_id=self.kwargs['pk']).count() > 0:
+            return Response({'error': 'Order cannot be deleted.'}, status=400)
         return super().destroy(request, *args, **kwargs)
 
 
@@ -80,21 +80,21 @@ class ItemViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
-        get_object_or_404(Command, id=self.kwargs.get('command_pk'))
+        get_object_or_404(Order, id=self.kwargs.get('order_pk'))
         return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
-        command_id = self.kwargs.get('command_pk')
+        order_id = self.kwargs.get('order_pk')
 
         return Item.objects\
-            .filter(command_id=command_id)\
+            .filter(order_id=order_id)\
             .select_related('product')\
             .prefetch_related('returns')\
             .all()
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context['command_id'] = self.kwargs.get('command_pk')
+        context['order_id'] = self.kwargs.get('order_pk')
         return context
 
     def get_serializer_class(self):

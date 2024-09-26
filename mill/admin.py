@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.forms import ModelForm
 from django.http import HttpRequest
-from .models import Product, Customer, Production, Purchase, Command, Item
+from .models import Product, Customer, Production, Purchase, Order, Item
 
 # Register your models here.
 
@@ -43,17 +43,17 @@ class ItemInline(admin.TabularInline):
     autocomplete_fields = ['product']
 
 
-@admin.register(Command)
-class CommandAdmin(admin.ModelAdmin):
-    list_display = ['id', 'customer', 'state', 'created_at']
-    list_filter = ['state', 'created_at']
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ['id', 'customer', 'status', 'created_at']
+    list_filter = ['status', 'created_at']
     inlines = [ItemInline]
     autocomplete_fields = ['customer']
 
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ['product', 'price', 'quantity', 'command']
+    list_display = ['product', 'price', 'quantity', 'order']
 
     def save_model(self, request, obj, form, change):
         obj.update_quantity(form.cleaned_data['quantity'])

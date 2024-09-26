@@ -4,8 +4,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
-from mill.constants import STATE_CHOICES, STATE_UNPAID
-from mill.models import (Command, Customer, Item, ItemReturn, Payment, Product, Purchase,
+from mill.constants import ORDER_STATUS_CHOICES, ORDER_STATUS_UNPAID
+from mill.models import (Order, Customer, Item, ItemReturn, Payment, Product, Purchase,
                          Production)
 
 
@@ -54,7 +54,7 @@ class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ['id', 'product',
-                  'price', 'quantity', 'line_amount', 'command']
+                  'price', 'quantity', 'line_amount', 'order']
 
     line_amount = serializers.SerializerMethodField()
 
@@ -62,36 +62,36 @@ class ItemSerializer(serializers.ModelSerializer):
         return item.get_net_quantity() * item.price
 
 
-class CommandSerializer(serializers.ModelSerializer):
+class OrderSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Command
-        fields = ['id', 'customer', 'state', 'items', 'total_amount']
+        model = Order
+        fields = ['id', 'customer', 'status', 'items', 'total_amount']
 
     items = ItemSerializer(many=True, read_only=True)
     total_amount = serializers.SerializerMethodField()
-    state = serializers.ChoiceField(
-        choices=STATE_CHOICES,
-        default=STATE_UNPAID,
+    status = serializers.ChoiceField(
+        choices=ORDER_STATUS_CHOICES,
+        default=ORDER_STATUS_UNPAID,
     )
 
-    def get_total_amount(self, command: Command):
-        return command.get_total_amount()
+    def get_total_amount(self, order: Order):
+        return order.get_total_amount()
 
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        fields = ['id', 'amount', 'command']
+        fields = ['id', 'amount', 'order', 'status', 'method']
 
 
-class UpdateCommandSerializer(serializers.ModelSerializer):
+class UpdateOrderSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Command
+        model = Order
         fields = ['state']
 
     state = serializers.ChoiceField(
-        choices=STATE_CHOICES,
-        default=STATE_UNPAID
+        choices=ORDER_STATUS_CHOICES,
+        default=ORDER_STATUS_UNPAID
     )
 
 
@@ -117,16 +117,16 @@ class AddItemSerializer(serializers.ModelSerializer):
     quantity = serializers.IntegerField(required=False)
 
     def save(self, **kwargs):
-        command_id = self.context['command_id']
+        order_id = self.context['order_id']
         product = self.validated_data['product']
-        command = get_object_or_404(Command, pk=command_id)
+        order = get_object_or_404(Order, pk=order_id)
         quantity = self.validated_data['quantity']
         price = product.purchase_price \
-            if command.customer.is_supplier\
+            if order.customer.is_supplier\
             else product.customer_price
         try:
             item = Item.objects.add_item(
-                command=command,
+                order=order,
                 product=product,
                 quantity=quantity,
                 price=price

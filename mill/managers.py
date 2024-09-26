@@ -18,9 +18,9 @@ class ProductManager(Manager):
 
 
 class ItemManager(Manager):
-    def add_item(self, command, product, quantity, price):
+    def add_item(self, order, product, quantity, price):
         item, created = models.Item.objects.get_or_create(
-            command=command,
+            order=order,
             product=product,
             defaults={'quantity': quantity, 'price': price}
         )
