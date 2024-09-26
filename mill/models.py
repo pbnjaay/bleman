@@ -145,7 +145,7 @@ class Item(models.Model):
         related_name='items'
     )
     price = models.PositiveIntegerField(validators=[MinValueValidator(0)])
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     objects = managers.ItemManager()
     order = models.ForeignKey(
         Order,
@@ -175,7 +175,7 @@ class ItemReturn(models.Model):
 
     item = models.ForeignKey(
         Item, on_delete=models.PROTECT, related_name='returns')
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     return_date = models.DateTimeField(auto_now_add=True)
     reason = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

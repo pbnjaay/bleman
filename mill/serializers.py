@@ -137,7 +137,7 @@ class AddItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = ['id', 'product', 'quantity']
 
-    quantity = serializers.IntegerField()
+    quantity = serializers.IntegerField(min_value=1)
 
     def save(self, **kwargs):
         product = self.validated_data['product']
