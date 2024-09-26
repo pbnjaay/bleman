@@ -8,7 +8,7 @@ from mill.models import (Order, Customer, Item, ItemReturn, Payment, Product,
                          Production, Purchase)
 from mill.pagination import PageNumberPagination
 from mill.serializers import (AddItemSerializer, OrderSerializer,
-                              CustomerSerialzer, ItemReturnSerializer,
+                              CustomerSerializer, ItemReturnSerializer,
                               ItemSerializer, PaymentSerializer, ProductionSerializer,
                               ProductSerializer, PurchaseSerializer,
                               UpdateOrderSerializer, UpdateItemSerializer)
@@ -41,7 +41,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
     queryset = Customer.objects.all()
-    serializer_class = CustomerSerialzer
+    serializer_class = CustomerSerializer
 
     def destroy(self, request, *args, **kwargs):
         if Order.objects.filter(customer_id=self.kwargs['pk']).count() > 0:
