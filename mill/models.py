@@ -193,9 +193,9 @@ class Payment(models.Model):
         ('CREDIT_CARD', 'Credit Card'),
         ('BANK_TRANSFER', 'Bank Transfer'),
     ]
-    amount = models.PositiveBigIntegerField(validators=MinValueValidator(1))
+    amount = models.PositiveBigIntegerField(validators=[MinValueValidator(1)])
     command = models.ForeignKey(
-        Command, on_delete=models.CASCADE, related_name='payments')
+        Command, on_delete=models.PROTECT, related_name='payments')
 
     status = models.CharField(
         max_length=10, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
