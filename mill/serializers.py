@@ -123,7 +123,7 @@ class UpdateItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = ['quantity']
 
-    quantity = serializers.IntegerField()
+    quantity = serializers.IntegerField(min_value=1)
 
     def validate_quantity(self, value):
         item = self.instance

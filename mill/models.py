@@ -31,15 +31,6 @@ class Product(models.Model):
             .first()['quantity_in_stock']
 
     def validate_stock_availability(self, order_quantity):
-        if order_quantity <= 0:
-            raise ValidationError(
-                [
-                    ValidationError(
-                        _(f"Ensure this value is greater than or equal to 0."),
-                        code='min_value'
-                    )
-                ])
-
         product_stock = self._get_quantity_in_stock()
         if order_quantity > product_stock:
             raise ValidationError(
