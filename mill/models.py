@@ -183,8 +183,26 @@ class ItemReturn(models.Model):
 
 
 class Payment(models.Model):
-    amount = models.PositiveBigIntegerField()
+    PAYMENT_STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('COMPLETED', 'Completed'),
+        ('FAILED', 'Failed'),
+    ]
+    PAYMENT_METHOD_CHOICES = [
+        ('CASH', 'Cash'),
+        ('CREDIT_CARD', 'Credit Card'),
+        ('BANK_TRANSFER', 'Bank Transfer'),
+    ]
+    amount = models.PositiveBigIntegerField(validators=MinValueValidator(1))
     command = models.ForeignKey(
         Command, on_delete=models.CASCADE, related_name='payments')
+
+    status = models.CharField(
+        max_length=10, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
+    method = models.CharField(max_length=15, choices=PAYMENT_METHOD_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def get_total_payments(cls, command):
+        return cls.objects.filter(command=command).aggregate(total=models.Sum('amount'))['total'] or 0

@@ -9,11 +9,20 @@ from mill.models import (Command, Customer, Item, ItemReturn, Payment, Product, 
                          Production)
 
 
+class ProductSerializer(serializers.ModelSerializer):
+    quantity_in_stock = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'customer_price', 'purchase_price',
+                  'quantity_in_stock', 'created_at', 'updated_at']
+
+
 class ProductionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Production
-        fields = ['id', 'product', 'quantity',
-                  'production_date', 'created_at', 'updated_at']
+        fields = ['id', 'product', 'quantity', 'production_date',
+                  'created_at', 'updated_at']
 
 
 class PurchaseSerializer(serializers.ModelSerializer):
@@ -28,22 +37,6 @@ class CustomerSerialzer(serializers.ModelSerializer):
         model = Customer
         fields = ['id', 'given_name', 'surname', 'phone_number',
                   'is_supplier', 'created_at', 'updated_at']
-
-
-class ProductionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Production
-        fields = ['id', 'product', 'quantity', 'production_date',
-                  'created_at', 'updated_at']
-
-
-class ProductSerializer(serializers.ModelSerializer):
-    quantity_in_stock = serializers.ReadOnlyField()
-
-    class Meta:
-        model = Product
-        fields = ['id', 'name', 'customer_price', 'purchase_price',
-                  'quantity_in_stock', 'created_at', 'updated_at']
 
 
 class ItemReturnSerializer(serializers.ModelSerializer):
@@ -83,6 +76,12 @@ class CommandSerializer(serializers.ModelSerializer):
 
     def get_total_amount(self, command: Command):
         return command.get_total_amount()
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ['id', 'amount', 'command']
 
 
 class UpdateCommandSerializer(serializers.ModelSerializer):
@@ -137,9 +136,3 @@ class AddItemSerializer(serializers.ModelSerializer):
                 {"quantity": list(e)}, code='invalid'
             )
         return item
-
-
-class PaymentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Payment
-        fields = ['id', 'amount', 'command']
