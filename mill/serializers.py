@@ -72,7 +72,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     items = ItemSerializer(many=True, read_only=True)
     total_amount = serializers.SerializerMethodField()
-    remain = serializers.SerializerMethodField()
+    remain_amount = serializers.SerializerMethodField()
     status = serializers.ChoiceField(
         choices=ORDER_STATUS_CHOICES,
         default=ORDER_STATUS_UNPAID,
