@@ -1,12 +1,14 @@
 from django.db import transaction
+from django.db.models import Sum
 from django.forms import ValidationError
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
 
-from mill.constants import ORDER_STATUS_CHOICES, ORDER_STATUS_PAID, ORDER_STATUS_REMAIN, ORDER_STATUS_UNPAID
-from mill.models import (Order, Customer, Item, ItemReturn, Payment, Product, Purchase,
-                         Production)
+from mill.constants import (ORDER_STATUS_CHOICES, ORDER_STATUS_PAID,
+                            ORDER_STATUS_REMAIN, ORDER_STATUS_UNPAID)
+from mill.models import (Customer, Item, ItemReturn, Order, Payment, Product,
+                         Production, Purchase)
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -87,16 +89,15 @@ class PaymentSerializer(serializers.ModelSerializer):
         order_id = self.context['order_id']
         order = get_object_or_404(Order, pk=order_id)
 
-        total_payment_amount = order.get_total_amount_payment() + \
-            self.validated_data['amount']
+        order.payments.create(amount=self.validated_data['amount'])
+        total_payment_amount = order.payments\
+            .aggregate(total=Sum('amount'))['total']
 
-        order.status = ORDER_STATUS_PAID \
-            if order.get_total_amount() == total_payment_amount \
+        order.status = ORDER_STATUS_PAID if \
+            order.get_total_amount() == total_payment_amount\
             else ORDER_STATUS_REMAIN
 
         order.save()
-
-        self.validated_data['order'] = order
 
         return super().save(**kwargs)
 
