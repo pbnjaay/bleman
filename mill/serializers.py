@@ -34,7 +34,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
                   'quantity', 'purchase_date', 'created_at', 'updated_at']
 
 
-class CustomerSerialzer(serializers.ModelSerializer):
+class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = ['id', 'given_name', 'surname', 'phone_number',
@@ -137,7 +137,7 @@ class AddItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = ['id', 'product', 'quantity']
 
-    quantity = serializers.IntegerField(required=False)
+    quantity = serializers.IntegerField()
 
     def save(self, **kwargs):
         product = self.validated_data['product']
