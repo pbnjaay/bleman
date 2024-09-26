@@ -128,6 +128,9 @@ class Order(models.Model):
     def get_total_amount(self):
         return sum([item.get_net_quantity() * item.price for item in self.items.all()])
 
+    def get_total_amount_payment(self):
+        return sum([payment.amount for payment in self.payments.all()])
+
     def __str__(self) -> str:
         return f'{self.pk}'
 

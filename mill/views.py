@@ -62,7 +62,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Order.objects.prefetch_related('items__returns').all()
+        return Order.objects.prefetch_related('items__returns', 'payments').all()
 
     def get_serializer_class(self):
         if self.action == 'update':

@@ -85,13 +85,18 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     def save(self, **kwargs):
         order_id = self.context['order_id']
-        order = self.validated_data['order']
+        order = get_object_or_404(Order, pk=order_id)
+
+        total_payment_amount = order.get_total_amount_payment() + \
+            self.validated_data['amount']
 
         order.status = ORDER_STATUS_PAID \
-            if order.get_total_amount() == self.validated_data['amount'] \
+            if order.get_total_amount() == total_payment_amount \
             else ORDER_STATUS_REMAIN
 
         order.save()
+
+        self.validated_data['order'] = order
 
         return super().save(**kwargs)
 
