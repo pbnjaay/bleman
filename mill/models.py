@@ -1,7 +1,5 @@
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
-from django.db.models import Sum, Value
-from django.db.models.functions import Coalesce
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 
@@ -17,9 +15,9 @@ class Product(models.Model):
     objects = managers.ProductManager()
     name = models.CharField(max_length=255)
     purchase_price = models.PositiveIntegerField(
-        validators=[MinValueValidator(0)])
+        validators=[MinValueValidator(1)])
     customer_price = models.PositiveIntegerField(
-        validators=[MinValueValidator(0)])
+        validators=[MinValueValidator(1)])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -31,15 +29,6 @@ class Product(models.Model):
             .first()['quantity_in_stock']
 
     def validate_stock_availability(self, order_quantity):
-        if order_quantity <= 0:
-            raise ValidationError(
-                [
-                    ValidationError(
-                        _(f"Ensure this value is greater than or equal to 0."),
-                        code='min_value'
-                    )
-                ])
-
         product_stock = self._get_quantity_in_stock()
         if order_quantity > product_stock:
             raise ValidationError(
@@ -65,7 +54,7 @@ class Production(models.Model):
         on_delete=models.PROTECT,
         related_name='productions'
     )
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     production_date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -83,8 +72,8 @@ class Purchase(models.Model):
         related_name='purchases'
     )
     purchase_unit_price = models.PositiveIntegerField(
-        validators=[MinValueValidator(0)])
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+        validators=[MinValueValidator(1)])
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     purchase_date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -126,13 +115,13 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def get_total_amount(self):
-        return sum([item.get_net_quantity() * item.price for item in self.items.all()])
+        return sum(item.get_net_quantity() * item.price for item in self.items.all())
 
     def get_total_amount_payment(self):
-        return sum([payment.amount for payment in self.payments.all()])
+        return sum(payment.amount for payment in self.payments.all())
 
     def __str__(self) -> str:
-        return f'{self.pk}'
+        return f"Order {self.pk} - {self.customer.surname} ({self.status})"
 
 
 class Item(models.Model):
@@ -145,7 +134,7 @@ class Item(models.Model):
         related_name='items'
     )
     price = models.PositiveIntegerField(validators=[MinValueValidator(0)])
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     objects = managers.ItemManager()
     order = models.ForeignKey(
         Order,
@@ -154,7 +143,7 @@ class Item(models.Model):
     )
 
     def __get_total_returns(self):
-        return sum([returned.quantity for returned in self.returns.all()])
+        return sum(returned.quantity for returned in self.returns.all())
 
     def get_net_quantity(self):
         return self.quantity - self.__get_total_returns()
@@ -169,13 +158,13 @@ class Item(models.Model):
         return self.product.name
 
 
-class ItemReturn(models.Model):
+class Return(models.Model):
     class Meta:
         ordering = ['-id']
 
     item = models.ForeignKey(
         Item, on_delete=models.PROTECT, related_name='returns')
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     return_date = models.DateTimeField(auto_now_add=True)
     reason = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -188,15 +177,25 @@ class ItemReturn(models.Model):
 class Payment(models.Model):
     amount = models.PositiveBigIntegerField(validators=[MinValueValidator(1)])
     order = models.ForeignKey(
-        Order, on_delete=models.PROTECT, related_name='payments')
+        Order,
+        on_delete=models.PROTECT,
+        related_name='payments'
+    )
 
     status = models.CharField(
-        max_length=10, choices=constants.PAYMENT_STATUS_CHOICES, default=constants.PAYMENT_STATUS_PENDING)
+        max_length=10,
+        choices=constants.PAYMENT_STATUS_CHOICES,
+        default=constants.PAYMENT_STATUS_COMPLETED
+    )
     method = models.CharField(
-        max_length=15, choices=constants.PAYMENT_METHOD_CHOICES, default=constants.PAYMENT_METHOD_CASH)
+        max_length=15,
+        choices=constants.PAYMENT_METHOD_CHOICES,
+        default=constants.PAYMENT_METHOD_CASH
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod
     def get_total_payments(cls, order):
-        return cls.objects.filter(order=order).aggregate(total=models.Sum('amount'))['total'] or 0
+        return cls.objects.filter(order=order)\
+            .aggregate(total=models.Sum('amount'))['total'] or 0

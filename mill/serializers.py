@@ -7,8 +7,8 @@ from rest_framework import serializers
 
 from mill.constants import (ORDER_STATUS_CHOICES, ORDER_STATUS_PAID,
                             ORDER_STATUS_REMAIN, ORDER_STATUS_UNPAID)
-from mill.models import (Customer, Item, ItemReturn, Order, Payment, Product,
-                         Production, Purchase)
+from mill.models import (Customer, Item, Order, Payment, Product, Production,
+                         Purchase, Return)
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -34,22 +34,22 @@ class PurchaseSerializer(serializers.ModelSerializer):
                   'quantity', 'purchase_date', 'created_at', 'updated_at']
 
 
-class CustomerSerialzer(serializers.ModelSerializer):
+class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = ['id', 'given_name', 'surname', 'phone_number',
                   'is_supplier', 'created_at', 'updated_at']
 
 
-class ItemReturnSerializer(serializers.ModelSerializer):
+class ReturnSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ItemReturn
+        model = Return
         fields = ['id', 'quantity', 'return_date',
                   'reason', 'created_at', 'updated_at']
 
     def create(self, validated_data):
         item_id = self.context['item_id']
-        return ItemReturn.objects.create(item_id=item_id, **validated_data)
+        return Return.objects.create(item_id=item_id, **validated_data)
 
 
 class ItemSerializer(serializers.ModelSerializer):
@@ -67,14 +67,19 @@ class ItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ['id', 'customer', 'status', 'items', 'total_amount']
+        fields = ['id', 'customer', 'status',
+                  'items', 'remain_amount', 'total_amount']
 
     items = ItemSerializer(many=True, read_only=True)
     total_amount = serializers.SerializerMethodField()
+    remain_amount = serializers.SerializerMethodField()
     status = serializers.ChoiceField(
         choices=ORDER_STATUS_CHOICES,
         default=ORDER_STATUS_UNPAID,
     )
+
+    def get_remain_amount(self, order: Order):
+        return self.get_total_amount(order) - order.get_total_amount_payment()
 
     def get_total_amount(self, order: Order):
         return order.get_total_amount()
@@ -118,7 +123,7 @@ class UpdateItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = ['quantity']
 
-    quantity = serializers.IntegerField()
+    quantity = serializers.IntegerField(min_value=1)
 
     def validate_quantity(self, value):
         item = self.instance
@@ -132,7 +137,7 @@ class AddItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = ['id', 'product', 'quantity']
 
-    quantity = serializers.IntegerField(required=False)
+    quantity = serializers.IntegerField(min_value=1)
 
     def save(self, **kwargs):
         product = self.validated_data['product']

@@ -1,17 +1,16 @@
 from django.shortcuts import get_object_or_404
+from rest_framework import mixins, permissions, viewsets
 from rest_framework.response import Response
-from rest_framework import permissions, viewsets
 
-from rest_framework import mixins
-
-from mill.models import (Order, Customer, Item, ItemReturn, Payment, Product,
-                         Production, Purchase)
+from mill.models import (Customer, Item, Order, Payment, Product, Production,
+                         Purchase, Return)
 from mill.pagination import PageNumberPagination
-from mill.serializers import (AddItemSerializer, OrderSerializer,
-                              CustomerSerialzer, ItemReturnSerializer,
-                              ItemSerializer, PaymentSerializer, ProductionSerializer,
+from mill.serializers import (AddItemSerializer, CustomerSerializer,
+                              ItemSerializer, OrderSerializer,
+                              PaymentSerializer, ProductionSerializer,
                               ProductSerializer, PurchaseSerializer,
-                              UpdateOrderSerializer, UpdateItemSerializer)
+                              ReturnSerializer, UpdateItemSerializer,
+                              UpdateOrderSerializer)
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -41,7 +40,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
     queryset = Customer.objects.all()
-    serializer_class = CustomerSerialzer
+    serializer_class = CustomerSerializer
 
     def destroy(self, request, *args, **kwargs):
         if Order.objects.filter(customer_id=self.kwargs['pk']).count() > 0:
@@ -105,8 +104,8 @@ class ItemViewSet(viewsets.ModelViewSet):
         return ItemSerializer
 
 
-class ItemReturnViewSet(viewsets.ModelViewSet):
-    serializer_class = ItemReturnSerializer
+class ReturnViewSet(viewsets.ModelViewSet):
+    serializer_class = ReturnSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer_context(self):
@@ -118,7 +117,7 @@ class ItemReturnViewSet(viewsets.ModelViewSet):
         item_id = self.kwargs['item_pk']
         get_object_or_404(Item, pk=item_id)
 
-        return ItemReturn.objects\
+        return Return.objects\
             .filter(item_id=item_id)\
             .all()
 
