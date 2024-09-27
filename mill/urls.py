@@ -20,7 +20,7 @@ order_router.register('payments', views.PaymentViewSet,
 
 item_router = routers.NestedDefaultRouter(
     order_router, 'items', lookup='item')
-item_router.register('returns', views.ItemReturnViewSet,
+item_router.register('returns', views.ReturnViewSet,
                      basename='item-returns')
 
 

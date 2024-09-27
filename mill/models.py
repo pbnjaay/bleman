@@ -15,9 +15,9 @@ class Product(models.Model):
     objects = managers.ProductManager()
     name = models.CharField(max_length=255)
     purchase_price = models.PositiveIntegerField(
-        validators=[MinValueValidator(0)])
+        validators=[MinValueValidator(1)])
     customer_price = models.PositiveIntegerField(
-        validators=[MinValueValidator(0)])
+        validators=[MinValueValidator(1)])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -54,7 +54,7 @@ class Production(models.Model):
         on_delete=models.PROTECT,
         related_name='productions'
     )
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     production_date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -72,8 +72,8 @@ class Purchase(models.Model):
         related_name='purchases'
     )
     purchase_unit_price = models.PositiveIntegerField(
-        validators=[MinValueValidator(0)])
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+        validators=[MinValueValidator(1)])
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     purchase_date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -158,7 +158,7 @@ class Item(models.Model):
         return self.product.name
 
 
-class ItemReturn(models.Model):
+class Return(models.Model):
     class Meta:
         ordering = ['-id']
 
@@ -185,7 +185,7 @@ class Payment(models.Model):
     status = models.CharField(
         max_length=10,
         choices=constants.PAYMENT_STATUS_CHOICES,
-        default=constants.PAYMENT_STATUS_PENDING
+        default=constants.PAYMENT_STATUS_COMPLETED
     )
     method = models.CharField(
         max_length=15,

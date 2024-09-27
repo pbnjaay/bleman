@@ -7,8 +7,8 @@ from rest_framework import serializers
 
 from mill.constants import (ORDER_STATUS_CHOICES, ORDER_STATUS_PAID,
                             ORDER_STATUS_REMAIN, ORDER_STATUS_UNPAID)
-from mill.models import (Customer, Item, ItemReturn, Order, Payment, Product,
-                         Production, Purchase)
+from mill.models import (Customer, Item, Order, Payment, Product, Production,
+                         Purchase, Return)
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -41,15 +41,15 @@ class CustomerSerializer(serializers.ModelSerializer):
                   'is_supplier', 'created_at', 'updated_at']
 
 
-class ItemReturnSerializer(serializers.ModelSerializer):
+class ReturnSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ItemReturn
+        model = Return
         fields = ['id', 'quantity', 'return_date',
                   'reason', 'created_at', 'updated_at']
 
     def create(self, validated_data):
         item_id = self.context['item_id']
-        return ItemReturn.objects.create(item_id=item_id, **validated_data)
+        return Return.objects.create(item_id=item_id, **validated_data)
 
 
 class ItemSerializer(serializers.ModelSerializer):
