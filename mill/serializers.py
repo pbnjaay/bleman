@@ -4,6 +4,7 @@ from django.forms import ValidationError
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+from django.db import models, transaction
 
 from mill.constants import (ORDER_STATUS_CHOICES, ORDER_STATUS_PAID,
                             ORDER_STATUS_REMAIN, ORDER_STATUS_UNPAID)
@@ -91,20 +92,21 @@ class PaymentSerializer(serializers.ModelSerializer):
         fields = ['id', 'amount', 'order', 'status', 'method']
 
     def save(self, **kwargs):
-        order_id = self.context['order_id']
-        order = get_object_or_404(Order, pk=order_id)
+        with transaction.atomic():
+            order_id = self.context['order_id']
+            order = get_object_or_404(Order, pk=order_id)
 
-        order.payments.create(amount=self.validated_data['amount'])
-        total_payment_amount = order.payments\
-            .aggregate(total=Sum('amount'))['total']
+            order.payments.create(amount=self.validated_data['amount'])
+            total_payment_amount = order.payments\
+                .aggregate(total=Sum('amount'))['total']
 
-        order.status = ORDER_STATUS_PAID if \
-            order.get_total_amount() == total_payment_amount\
-            else ORDER_STATUS_REMAIN
+            order.status = ORDER_STATUS_PAID if \
+                order.get_total_amount() == total_payment_amount\
+                else ORDER_STATUS_REMAIN
 
-        order.save()
+            order.save()
 
-        return super().save(**kwargs)
+            return super().save(**kwargs)
 
 
 class UpdateOrderSerializer(serializers.ModelSerializer):
